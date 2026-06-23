@@ -1,4 +1,4 @@
-public abstract class Pagamentos {
+public abstract class Pagamento {
     private int indiceConsulta;
     private double valorFinal;
     private String tipoPagamento;
@@ -19,14 +19,14 @@ public abstract class Pagamentos {
     }
 
     //Pagamento comum, dinheiro ou pix sem parcela
-    public Pagamentos(int indiceConsulta, double valorFinal, String tipoPagamento) {
+    public Pagamento(int indiceConsulta, double valorFinal, String tipoPagamento) {
         this.indiceConsulta = indiceConsulta;
         this.valorFinal = valorFinal;
         this.tipoPagamento = tipoPagamento;
         this.parcelas = 1;
     }
     //possivel parcelar / cartao
-    public Pagamentos(int indiceConsulta, double valorFinal, String tipoPagamento, int parcelas) {
+    public Pagamento(int indiceConsulta, double valorFinal, String tipoPagamento, int parcelas) {
         this.indiceConsulta = indiceConsulta;
         this.valorFinal = valorFinal;
         this.tipoPagamento = tipoPagamento;
@@ -34,25 +34,15 @@ public abstract class Pagamentos {
     }
 
     public abstract double calcularValorFinal();
-}
 
-public class PagamentoCartao extends Pagamentos{
-    public PagamentoCartao(int indiceConsulta, double valorFinal, String tipoPagamento, int parcelas){
-        super(indiceConsulta, valorFinal, tipoPagamento, parcelas);
+    public String exibirResumo() {
+        double valor = calcularValorFinal();
+        String resumo = "Consulta #" + indiceConsulta + " | Valor: R$" + valor + " | Tipo: " + tipoPagamento + " | Parcelas: " + parcelas;
+        if (parcelas > 1) {
+            double valorParcela =
+                    Math.round((valor / parcelas) * 100.0) / 100.0;
+            resumo += " (R$" + valorParcela + " cada)";
+        }
+        return resumo;
     }
-
-}
-
-public class PagamentoDinheiro extends Pagamentos{
-    public PagamentoDinheiro(int indiceConsulta, double valorFinal, String tipoPagamento){
-        super(indiceConsulta, valorFinal, tipoPagamento);
-    }
-
-}
-
-public class PagamentoConvenio extends Pagamentos{
-    public PagamentoConvenio(int indiceConsulta, double valorFinal, String tipoPagamento){
-        super(indiceConsulta, valorFinal, tipoPagamento);
-    }
-
 }

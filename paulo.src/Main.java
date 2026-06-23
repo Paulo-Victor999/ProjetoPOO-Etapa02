@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
@@ -13,8 +14,8 @@ public class Main {
     static Atendimento[] atendimentos = new Atendimento[200];
     static int totalAtendimentos = 0;
 
-    static Pagamento[] pagamentos = new Pagamento[200];
-    static int totalPagamentos = 0;
+    //Agora e uma arraylist, e n um array
+    static ArrayList<Pagamento> pagamentos = new ArrayList<>();
 
     static double[] multas = new double[100];
     static int totalMultas = 0;
@@ -729,7 +730,7 @@ public class Main {
         System.out.println("Consulta marcada como realizada.");
     }
 
-    // ---- PAGAMENTOS ----
+    // ---- PAGAMENTOS ---- 
 
     public static void menuPagamentos() {
         int op = -1;
@@ -745,118 +746,138 @@ public class Main {
             switch (op) {
                 case 1: pagamentoDireto(); break;
                 case 2: pagamentoAutomatico(); break;
-                case 3: listarPagamentos(); break;
+                case 3: listarPagamentos(); break; //vou por isso na proxima
                 case 0: break;
                 default: System.out.println("Opcao invalida!"); break;
             }
         }
     }
-
+    //PRIMEIRA MUDANCA NA FUNCAO DO pagamentoDireto()
     public static void pagamentoDireto() {
         System.out.print("Indice da consulta: ");
         int idxConsulta = Integer.parseInt(sc.nextLine());
 
+        // Validação simples para evitar indice invalido
         if (idxConsulta < 0 || idxConsulta >= totalConsultas) {
             System.out.println("Indice invalido.");
             return;
         }
 
+        // Lê o valor do pagamento
         System.out.print("Valor: ");
         double valor = Double.parseDouble(sc.nextLine());
+
+        // Define o tipo de pagamento
         System.out.print("Tipo (dinheiro/cartao/convenio): ");
         String tipoPag = sc.nextLine();
 
+        Pagamento pagamento;
+
+        // Se for cartão
         if (tipoPag.equals("cartao")) {
+
             System.out.print("Parcelas (1 a 3): ");
             int parc = Integer.parseInt(sc.nextLine());
-            if (parc < 1) parc = 1;
-            if (parc > 3) parc = 3;
-            pagamentos[totalPagamentos] = new Pagamento(idxConsulta, valor, tipoPag, parc);
-            if (parc > 1) {
-                double vlrParc = Math.round((valor / parc) * 100.0) / 100.0;
-                System.out.println("Pagamento em " + parc + "x de R$" + vlrParc);
-            }
-        } else {
-            pagamentos[totalPagamentos] = new Pagamento(idxConsulta, valor, tipoPag);
-        }
-        totalPagamentos++;
-        System.out.println("Pagamento registrado!");
-    }
+            // Cria objto da classe filha PagamentoCartao
 
+            pagamento = new PagamentoCartao(idxConsulta, valor, tipoPag, parc);
+
+            // Se for dinheiro
+        } else if (tipoPag.equals("dinheiro")) {
+
+            // Cria objeto da classe filha PagamentoDinheiro
+            pagamento = new PagamentoDinheiro(idxConsulta, valor, tipoPag);
+
+        } else {
+            pagamento = new PagamentoConvenio(idxConsulta, valor, tipoPag);
+        }
+        pagamentos.add(pagamento);
+        System.out.println(pagamento.exibirResumo());
+        System.out.println("Pagamento registrado!");
+
+    }
+    // SEGUNDA ALTERACAO DO PAGAMENTO AUTOMATICO
     public static void pagamentoAutomatico() {
         System.out.print("Indice da consulta: ");
         int idxConsulta = Integer.parseInt(sc.nextLine());
 
+        // Validação básica pra evitar acessar posição inválida do arraylist
         if (idxConsulta < 0 || idxConsulta >= totalConsultas) {
             System.out.println("Indice invalido.");
-            return;
+        return;
         }
 
-        // obtem valor do profissional
+        // Busca dados da consulta e do profissional associado
         String nomeProf = consultas[idxConsulta].nomeProfissional;
         int idxProf = buscarIndiceProfissional(nomeProf);
         double valorBase = profissionais[idxProf].valorConsulta;
 
-        // verifica convenio e tipo
+        // Busca dados do paciente da consulta
         String cpfPac = consultas[idxConsulta].cpfPaciente;
         int idxPac = buscarIndicePaciente(cpfPac);
 
+        // Regras de negócio: verifica convênio e tipo de consulta
         boolean temConvenio = !pacientes[idxPac].convenioNome.equals("");
         boolean ehRetorno = consultas[idxConsulta].tipo.equals("retorno");
 
+        // Calcula desconto baseado nas regras (retorno + convênio)
         double desconto = 0;
-        if (ehRetorno) desconto = desconto + 20;
-        if (temConvenio) desconto = desconto + 40;
+        if (ehRetorno) desconto += 20;
+        if (temConvenio) desconto += 40;
 
+        // Aplica desconto no valor base
+        double valorFinal = valorBase * (1 - desconto / 100.0);
+
+        // Verifica se existe multa para adicionar ao valor final
         System.out.print("Tem multa pendente? (1-Nao / 2-Sim): ");
         int temMulta = Integer.parseInt(sc.nextLine());
-        double valorMulta = 0;
 
-        double valorFinal;
-        if (temMulta == 1 && desconto == 0) {
-            valorFinal = Pagamento.calcularValor(valorBase);
-        } else if (temMulta == 1) {
-            valorFinal = Pagamento.calcularValor(valorBase, desconto);
-        } else {
+        if (temMulta == 2) {
             System.out.print("Valor da multa: ");
-            valorMulta = Double.parseDouble(sc.nextLine());
-            valorFinal = Pagamento.calcularValor(valorBase, desconto, valorMulta);
+            double multa = Double.parseDouble(sc.nextLine());
+            valorFinal += multa;
         }
 
-        // mostra detalhes
-        System.out.println("Valor base: R$" + valorBase);
-        System.out.println("Desconto: " + desconto + "%");
-        if (valorMulta > 0) System.out.println("Multa: R$" + valorMulta);
-        double vlrFinalArredondado = Math.round(valorFinal * 100.0) / 100.0;
-        System.out.println("Valor final: R$" + vlrFinalArredondado);
-
+        // Escolha do tipo de pagamento (define qual classe será instanciada)
         System.out.print("Tipo (dinheiro/cartao/convenio): ");
         String tipoPag = sc.nextLine();
 
+        // Referência polimórfica: variável do tipo pai recebendo filhos diferentes
+        Pagamento pagamento;
+
         if (tipoPag.equals("cartao")) {
+
+            // Pagamento no cartao com parcelas
             System.out.print("Parcelas (1 a 3): ");
             int parc = Integer.parseInt(sc.nextLine());
-            if (parc < 1) parc = 1;
-            if (parc > 3) parc = 3;
-            pagamentos[totalPagamentos] = new Pagamento(idxConsulta, valorFinal, tipoPag, parc);
-            double vlrParc = Math.round((valorFinal / parc) * 100.0) / 100.0;
-            System.out.println("Pagamento em " + parc + "x de R$" + vlrParc);
+
+            pagamento = new PagamentoCartao(idxConsulta, valorFinal, tipoPag, parc);
+
+        } else if (tipoPag.equals("dinheiro")) {
+
+            // Pagamento em dinheiro sem regra extra
+            pagamento = new PagamentoDinheiro(idxConsulta, valorFinal, tipoPag);
+
         } else {
-            pagamentos[totalPagamentos] = new Pagamento(idxConsulta, valorFinal, tipoPag);
+            // Pagamento por convênio
+            pagamento = new PagamentoConvenio(idxConsulta, valorFinal, tipoPag);
         }
-        totalPagamentos++;
-        System.out.println("Pagamento registrado!");
+        // Adiciona o pagamento na lista ArrayList
+        pagamentos.add(pagamento);
+
+        // Mostra resumo usando polimorfismo (cada classe calcula do seu jeito)
+        System.out.println(pagamento.exibirResumo());
     }
 
-    public static void listarPagamentos() {
-        if (totalPagamentos == 0) {
-            System.out.println("Nenhum pagamento registrado.");
-            return;
-        }
-        for (int i = 0; i < totalPagamentos; i++) {
-            System.out.println(pagamentos[i].exibirResumo());
-        }
-    }
+    // public static void listarPagamentos() {
+    //     if (totalPagamentos == 0) {
+    //         System.out.println("Nenhum pagamento registrado.");
+    //         return;
+    //     }
+    //     for (int i = 0; i < totalPagamentos; i++) {
+    //         System.out.println(pagamentos[i].exibirResumo());
+    //     }
+    // }
 
     // ---- RELATORIOS ----
 
