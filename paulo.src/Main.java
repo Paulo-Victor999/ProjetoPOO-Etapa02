@@ -807,28 +807,22 @@ public class Main {
         return;
         }
 
-        // Busca dados da consulta e do profissional associado
         String nomeProf = consultas[idxConsulta].nomeProfissional;
         int idxProf = buscarIndiceProfissional(nomeProf);
         double valorBase = profissionais[idxProf].valorConsulta;
 
-        // Busca dados do paciente da consulta
         String cpfPac = consultas[idxConsulta].cpfPaciente;
         int idxPac = buscarIndicePaciente(cpfPac);
 
-        // Regras de negócio: verifica convênio e tipo de consulta
         boolean temConvenio = !pacientes[idxPac].convenioNome.equals("");
         boolean ehRetorno = consultas[idxConsulta].tipo.equals("retorno");
 
-        // Calcula desconto baseado nas regras (retorno + convênio)
         double desconto = 0;
         if (ehRetorno) desconto += 20;
         if (temConvenio) desconto += 40;
 
-        // Aplica desconto no valor base
         double valorFinal = valorBase * (1 - desconto / 100.0);
 
-        // Verifica se existe multa para adicionar ao valor final
         System.out.print("Tem multa pendente? (1-Nao / 2-Sim): ");
         int temMulta = Integer.parseInt(sc.nextLine());
 
@@ -838,16 +832,12 @@ public class Main {
             valorFinal += multa;
         }
 
-        // Escolha do tipo de pagamento (define qual classe será instanciada)
         System.out.print("Tipo (dinheiro/cartao/convenio): ");
         String tipoPag = sc.nextLine();
-
-        // Referência polimórfica: variável do tipo pai recebendo filhos diferentes
         Pagamento pagamento;
 
         if (tipoPag.equals("cartao")) {
 
-            // Pagamento no cartao com parcelas
             System.out.print("Parcelas (1 a 3): ");
             int parc = Integer.parseInt(sc.nextLine());
 
@@ -855,11 +845,10 @@ public class Main {
 
         } else if (tipoPag.equals("dinheiro")) {
 
-            // Pagamento em dinheiro sem regra extra
             pagamento = new PagamentoDinheiro(idxConsulta, valorFinal, tipoPag);
 
         } else {
-            // Pagamento por convênio
+
             pagamento = new PagamentoConvenio(idxConsulta, valorFinal, tipoPag);
         }
         // Adiciona o pagamento na lista ArrayList
@@ -869,15 +858,19 @@ public class Main {
         System.out.println(pagamento.exibirResumo());
     }
 
-    // public static void listarPagamentos() {
-    //     if (totalPagamentos == 0) {
-    //         System.out.println("Nenhum pagamento registrado.");
-    //         return;
-    //     }
-    //     for (int i = 0; i < totalPagamentos; i++) {
-    //         System.out.println(pagamentos[i].exibirResumo());
-    //     }
-    // }
+    //tirando array e pondo arrayliste polimorfismo
+    public static void listarPagamentos() {
+    if (pagamentos.isEmpty()) {
+        System.out.println("Nenhum pagamento registrado.");
+        return;
+    }
+
+    System.out.println("===== LISTA DE PAGAMENTOS =====");
+
+    for (Pagamento pagamento : pagamentos) {
+        System.out.println(pagamento.exibirResumo());
+    }
+    }
 
     // ---- RELATORIOS ----
 
@@ -910,7 +903,7 @@ public class Main {
                     Relatorio.gerarRelatorio(consultas, totalConsultas, atendimentos, totalAtendimentos, ini, fim);
                     break;
                 case 4:
-                    Relatorio.gerarResumoFinanceiro(consultas, totalConsultas, pagamentos, totalPagamentos, multas, totalMultas);
+                    Relatorio.gerarResumoFinanceiro(consultas, totalConsultas, pagamentos, multas, totalMultas);
                     break;
                 case 0: break;
                 default: System.out.println("Opcao invalida!"); break;

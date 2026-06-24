@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Relatorio {
 
     // mostra todas as consultas
@@ -54,36 +56,33 @@ public class Relatorio {
         }
     }
 
-    // resumo financeiro do dia
-    public static void gerarResumoFinanceiro(Consulta[] consultas, int totalConsultas,
-                                             Pagamento[] pagamentos, int totalPagamentos,
-                                             double[] multas, int totalMultas) {
-        int realizadas = 0;
-        int canceladas = 0;
-        double totalFaturado = 0;
-        double totalEmMultas = 0;
+    // isso aqui mudou nesse commit, tinha dado errado no anterior
+    public static void gerarResumoFinanceiro(Consulta[] consultas, int totalConsultas, ArrayList<Pagamento> pagamentos, double[] multas, int totalMultas) {
 
-        for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].status.equals("realizada")) realizadas++;
-            if (consultas[i].status.equals("cancelada")) canceladas++;
-        }
+    int realizadas = 0;
+    int canceladas = 0;
+    double totalFaturado = 0;
+    double totalEmMultas = 0;
 
-        for (int i = 0; i < totalPagamentos; i++) {
-            totalFaturado = totalFaturado + pagamentos[i].valorFinal;
-        }
-
-        for (int i = 0; i < totalMultas; i++) {
-            totalEmMultas = totalEmMultas + multas[i];
-        }
-
-        System.out.println("\n=== RESUMO FINANCEIRO ===");
-        System.out.println("Atendimentos realizados: " + realizadas);
-        System.out.println("Total faturado: R$" + Math.round(totalFaturado * 100.0) / 100.0);
-        System.out.println("Cancelamentos: " + canceladas);
-        System.out.println("Total em multas: R$" + Math.round(totalEmMultas * 100.0) / 100.0);
+    for (int i = 0; i < totalConsultas; i++) {
+        if (consultas[i].status.equals("realizada")) realizadas++;
+        if (consultas[i].status.equals("cancelada")) canceladas++;
     }
 
-    // busca diagnostico de um atendimento pelo indice da consulta
+    for (Pagamento p : pagamentos) {
+        totalFaturado += p.getValorFinal();
+    }
+
+    for (int i = 0; i < totalMultas; i++) {
+        totalEmMultas += multas[i];
+    }
+
+    System.out.println("\n=== RESUMO FINANCEIRO ===");
+    System.out.println("Atendimentos realizados: " + realizadas);
+    System.out.println("Total faturado: R$" + Math.round(totalFaturado * 100.0) / 100.0);
+    System.out.println("Cancelamentos: " + canceladas);
+    System.out.println("Total em multas: R$" + Math.round(totalEmMultas * 100.0) / 100.0);
+}
     public static String buscarDiagnostico(int indiceConsulta, Atendimento[] atendimentos, int total) {
         for (int i = 0; i < total; i++) {
             if (atendimentos[i].indiceConsulta == indiceConsulta) {
